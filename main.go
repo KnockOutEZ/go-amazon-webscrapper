@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/gocolly/colly"
@@ -16,15 +17,15 @@ type Product struct {
 }
 
 func main() {
-        var keyword string
+	var keyword string
 
-        for {
-                fmt.Print("Please input the keyword you wanna scrap for: ")
-        fmt.Scanln(&keyword)
-                if (len([]rune(keyword)) != 0) {
-                    break
-                }
-            }
+	for {
+		fmt.Print("Please input the keyword you wanna scrap for: ")
+		fmt.Scanln(&keyword)
+		if len([]rune(keyword)) != 0 {
+			break
+		}
+	}
 
 	c := colly.NewCollector(colly.AllowedDomains("www.amazon.in"))
 
@@ -46,15 +47,24 @@ func main() {
 
 	c.OnHTML("a.s-pagination-item.s-pagination-next.s-pagination-button.s-pagination-separator", func(h *colly.HTMLElement) {
 		next_page := h.Request.AbsoluteURL(h.Attr("href"))
-		c.Visit(next_page)
+
+		err := c.Visit(next_page)
+		if err != nil {
+			log.Printf("failed to visit url")
+			return
+		}
 	})
 
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Link of the page:", r.URL.String())
 	})
 
-	c.Visit("https://www.amazon.in/s?k=" + keyword)
-	fmt.Println(products)
+	err := c.Visit("https://www.amazon.in/s?k=" + keyword)
+	if err != nil {
+		log.Printf("failed to visit url")
+		return
+	}
+	fmt.Println(err)
 	content, err := json.Marshal(products)
 
 	if err != nil {
